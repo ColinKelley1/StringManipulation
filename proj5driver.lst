@@ -1,0 +1,217 @@
+Microsoft (R) Macro Assembler Version 6.11		    11/15/18 19:23:06
+proj5driver.asm						     Page 1 - 1
+
+
+				;******************************************************************************************
+				;Program Name: proj4a.asm
+				;Programmer:   Colin Kelley
+				;Class:        CSCI 2160-001
+				;Date:         November 2, 2018 at 5:00 PM
+				;Purpose:	   This is a driver program that is used to test various methods from methods4.asm
+				;	
+				;******************************************************************************************
+
+					.486
+					.model flat
+					.stack 100h
+					
+					ExitProcess			PROTO Near32 stdcall, dVal:dword  ;dVal normally 0
+					ascint32			PROTO NEAR32 stdcall, lpInputString:dword
+					intasc32			PROTO NEAR32 stdcall, lpOutputString:dword,dNum:dword
+					getstring			PROTO NEAR32 stdcall, lpInputString:dword, dStringLength:dword
+					putstring			PROTO NEAR32 stdcall, lpInputString:dword
+					putch				PROTO Near32 stdcall, bVal:byte
+					getche				PROTO Near32 stdcall		;gets a char and echos it
+					getch				PROTO Near32 stdcall		;no echo of char
+					intasc32Comma 		PROTO Near32 stdcall, lpStringToConvert:dword, dVal:dword ; puts in commas
+					hexToChar			PROTO Near32 stdcall,lpDestStr:dword,lpSourceStr:dword, dLen:dword
+					
+					Extern String_length:Near32, String_copy:Near32, String_equals:Near32, String_equalsIgnoreCase:Near32, String_toUpperCase:Near32, String_toLowerCase:Near32, String_appends:Near32
+					
+				COMMENT %
+				;************************************************************************************
+				; name:  newline
+				; date: 9/27/2018
+				; purpose:  Advance to a new line
+				;***********************************************************************************%
+				newline  macro  
+					
+					INVOKE putch, 10	;Advance to a new line
+					INVOKE putch, 13	;Move to beginning of line
+					
+					endm
+					
+ 00000000				.data
+ 00000000 0A 0D 68 65 6C	strTest1	byte	10,13,"hello, my name is colin",0
+	   6C 6F 2C 20 6D
+	   79 20 6E 61 6D
+	   65 20 69 73 20
+	   63 6F 6C 69 6E
+	   00
+ 0000001A 0A 0D 48 45 4C	strTest2	byte	10,13,"HELLO, MY NAME IS COLIN",0
+	   4C 4F 2C 20 4D
+	   59 20 4E 41 4D
+	   45 20 49 53 20
+	   43 4F 4C 49 4E
+	   00
+ 00000034 42 69 6C 6C 20	strTest3	byte	"Bill Jones",0
+	   4A 6F 6E 65 73
+	   00
+ 0000003F 77 65 6E 74 20	strTest4	byte	"went to town",0
+	   74 6F 20 74 6F
+	   77 6E 00
+ 0000004C			strOut		byte	50 dup(?)
+ 0000007E 00000000		dVal 		dword	?
+					
+ 00000000				.code
+ 00000000			_start: 
+ 00000000  B8 FFFFFFFF			mov eax,-1					;dummy executable statement to aid in debugging.
+
+ 00000005 00000005		main	proc					;beginning of the driver
+					
+					;Test length
+ 00000005  8D 1D 00000000 R		lea ebx, strTest1
+ 0000000B  53				push ebx
+ 0000000C  E8 00000000 E		call String_length
+ 00000011  83 C4 04			add esp, 4
+ 00000014  A3 0000007E R		mov dVal, eax
+					INVOKE intasc32, addr strOut, dval
+					INVOKE putstring, addr strOut
+
+					;test copy
+ 00000033  8D 1D 00000000 R		lea ebx, strTest1
+ 00000039  53				push ebx
+ 0000003A  E8 00000000 E		call String_copy
+ 0000003F  83 C4 04			add esp, 4
+ 00000042  8B D8			mov ebx, eax
+					
+					INVOKE putstring, ebx
+					
+					;test equals
+ 0000004A  8D 1D 00000000 R		lea ebx, strTest1
+ 00000050  53				push ebx
+ 00000051  8D 1D 0000001A R		lea ebx, strTest2
+ 00000057  53				push ebx
+ 00000058  E8 00000000 E		call String_equals
+ 0000005D  83 C4 08			add esp, 8
+ 00000060  A3 0000007E R		mov dVal, eax
+					newline
+					INVOKE intasc32,addr strOut, dVal
+					INVOKE putstring, addr strOut
+					;test eqCase
+ 0000008D  8D 1D 00000000 R		lea ebx, strTest1
+ 00000093  53				push ebx
+ 00000094  8D 1D 0000001A R		lea ebx, strTest2
+ 0000009A  53				push ebx
+ 0000009B  E8 00000000 E		call String_equalsIgnoreCase
+ 000000A0  83 C4 08			add esp, 8
+ 000000A3  A3 0000007E R		mov dVal, eax
+					newline
+					INVOKE intasc32,addr strOut, dVal
+					INVOKE putstring, addr strOut
+					
+					
+					;test toUpper
+ 000000D0  8D 1D 00000000 R		lea ebx, strTest1
+ 000000D6  53				push ebx
+ 000000D7  E8 00000000 E		call String_toUpperCase
+ 000000DC  83 C4 04			add esp, 4
+ 000000DF  8B D8			mov ebx, eax
+					INVOKE putstring, ebx
+					
+					;Test toLower
+ 000000E7  8D 1D 0000001A R		lea ebx, strTest2
+ 000000ED  53				push ebx
+ 000000EE  E8 00000000 E		call String_toLowerCase
+ 000000F3  83 C4 04			add esp, 4
+ 000000F6  8B D8			mov ebx, eax
+					INVOKE putstring, ebx
+					
+					;Testappened
+ 000000FE  8D 1D 0000003F R		lea ebx, strTest4
+ 00000104  53				push ebx
+ 00000105  8D 1D 00000034 R		lea ebx, strTest3
+ 0000010B  53				push ebx
+ 0000010C  E8 00000000 E		call String_appends
+ 00000111  83 C4 08			add esp, 8
+					newline
+					INVOKE putstring, eax
+					
+					
+				INVOKE ExitProcess,0				;terminate "normally" the program
+ 0000012F			main	endp							;end of the "driving program"
+					PUBLIC _start
+				;any PROCs that you will add later go in here	
+					
+					END								;The very LAST line in your program. Terminate assembly
+Microsoft (R) Macro Assembler Version 6.11		    11/15/18 19:23:06
+proj5driver.asm						     Symbols 2 - 1
+
+
+
+
+Macros:
+
+                N a m e                 Type
+
+newline  . . . . . . . . . . . .	Proc
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+FLAT . . . . . . . . . . . . . .	GROUP
+STACK  . . . . . . . . . . . . .	32 Bit	 00000100 DWord	  Stack	  'STACK'	 
+_DATA  . . . . . . . . . . . . .	32 Bit	 00000082 DWord	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 0000012F DWord	  Public  'CODE'	
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+$$$$$$00001  . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 00000005 Private
+ExitProcess  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
+ascint32 . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
+getche . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
+getch  . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
+getstring  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
+hexToChar  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
+intasc32Comma  . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
+intasc32 . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
+main . . . . . . . . . . . . . .	P Near	 00000005 _TEXT	Length= 0000012A Public
+putch  . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
+putstring  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 00000000h   
+@DataSize  . . . . . . . . . . .	Number	 00000000h   
+@Interface . . . . . . . . . . .	Number	 00000000h   
+@Model . . . . . . . . . . . . .	Number	 00000007h   
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 FLAT
+@fardata?  . . . . . . . . . . .	Text   	 FLAT
+@fardata . . . . . . . . . . . .	Text   	 FLAT
+@stack . . . . . . . . . . . . .	Text   	 FLAT
+String_appends . . . . . . . . .	L Near	 00000000 FLAT	External
+String_copy  . . . . . . . . . .	L Near	 00000000 FLAT	External
+String_equalsIgnoreCase  . . . .	L Near	 00000000 FLAT	External
+String_equals  . . . . . . . . .	L Near	 00000000 FLAT	External
+String_length  . . . . . . . . .	L Near	 00000000 FLAT	External
+String_toLowerCase . . . . . . .	L Near	 00000000 FLAT	External
+String_toUpperCase . . . . . . .	L Near	 00000000 FLAT	External
+_start . . . . . . . . . . . . .	L Near	 00000000 _TEXT	Public
+dVal . . . . . . . . . . . . . .	DWord	 0000007E _DATA	
+strOut . . . . . . . . . . . . .	Byte	 0000004C _DATA	
+strTest1 . . . . . . . . . . . .	Byte	 00000000 _DATA	
+strTest2 . . . . . . . . . . . .	Byte	 0000001A _DATA	
+strTest3 . . . . . . . . . . . .	Byte	 00000034 _DATA	
+strTest4 . . . . . . . . . . . .	Byte	 0000003F _DATA	
+
+	   0 Warnings
+	   0 Errors
